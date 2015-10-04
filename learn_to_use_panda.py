@@ -64,12 +64,34 @@ print 'Unique values of sex',df['Sex'].unique()
 # plt.pyplot.ylabel('Count of passengers')
 # plt.pyplot.show()
 
-#check box plot for fare column
-df.boxplot(column='Fare')
-plt.pyplot.show()
-df.boxplot(column='Fare', by = 'Pclass')
-plt.pyplot.show()
+# #check box plot for fare column
+# df.boxplot(column='Fare')
+# plt.pyplot.show()
+# df.boxplot(column='Fare', by = 'Pclass')
+# plt.pyplot.show()
 
+
+#understanding the distribution of the survival ratio on the categorical variables
+temp1 = df.groupby('Pclass').Survived.count()
+temp2 = df.groupby('Pclass').Survived.sum()/df.groupby('Pclass').Survived.count()
+fig = plt.pyplot.figure(figsize =(8,4))
+ax1 = fig.add_subplot(121)
+ax1.set_xlabel('Pclass')
+ax1.set_ylabel('Count of passengers')
+ax1.set_title('Passengers by Pclass')
+temp1.plot(kind='bar')
+#plt.pyplot.show()
+
+ax2 = fig.add_subplot(122)
+temp2.plot(kind = 'bar')
+ax2.set_xlabel('Pclass')
+ax2.set_ylabel('Probability of Survival')
+ax2.set_title("Probability of survival by class")
+#plt.pyplot.show()
+
+temp3 = pd.crosstab([df.Pclass, df.Sex], df.Survived.astype(bool))
+temp3.plot(kind='bar', stacked=True, color=['red','blue'], grid=False)
+plt.pyplot.show()
 
 
 
