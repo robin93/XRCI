@@ -43,8 +43,10 @@ df.info()  #summary of the contents of the data
 #print df
 print df.head(10)
 print df.describe()
-print "median of age",df['Age'].median()
-print 'Unique values of sex',df['Sex'].unique()
+print "median of age",df['Age'].median()  #calculate the median of the data
+print "mean of the age",(df['Age'].mean()).round(decimals=0)
+print 'Unique values of sex',df['Sex'].unique()  #calculate the unique values
+
 
 # #ploting the histogram of the Age to check the distribution
 # fig = plt.pyplot.figure()
@@ -89,9 +91,59 @@ ax2.set_ylabel('Probability of Survival')
 ax2.set_title("Probability of survival by class")
 #plt.pyplot.show()
 
-temp3 = pd.crosstab([df.Pclass, df.Sex], df.Survived.astype(bool))
-temp3.plot(kind='bar', stacked=True, color=['red','blue'], grid=False)
-plt.pyplot.show()
+# temp3 = pd.crosstab([df.Pclass, df.Sex], df.Survived.astype(bool))
+# temp3.plot(kind='bar', stacked=True, color=['red','blue'], grid=False)
+# plt.pyplot.show()
+
+print "sum of the null values in cabin column",sum(df['Cabin'].isnull())
+print "Total number of entries in the cabin column",df['Cabin'].count()
+
+df = df.drop(['Ticket','Cabin'],axis = 1)
+
+meanAge = np.mean(df.Age)
+df.Age = df.Age.fillna(meanAge)
+
+def name_extract(word):
+ return word.split(',')[1].split('.')[0].strip()
+
+df2 = pd.DataFrame({'Salutation':df['Name'].apply(name_extract)})
+
+df = pd.merge(df, df2, left_index = True, right_index = True) # merges on index
+temp1 = df.groupby('Salutation').PassengerId.count()
+print temp1
+
+def group_salutation(old_salutation):
+ if old_salutation == 'Mr':
+    return('Mr')
+ else:
+    if old_salutation == 'Mrs':
+       return('Mrs')
+    else:
+       if old_salutation == 'Master':
+          return('Master')
+       else: 
+          if old_salutation == 'Miss':
+             return('Miss')
+          else:
+             return('Others')
+df3 = pd.DataFrame({'New_Salutation':df['Salutation'].apply(group_salutation)})
+df = pd.merge(df, df3, left_index = True, right_index = True)
+temp1 = df3.groupby('New_Salutation').count()
+temp1
+df.boxplot(column='Age', by = 'New_Salutation')
+#plt.pyplot.show()
+
+table = df.pivot_table(values='Age', index=['New_Salutation'], columns=['Pclass', 'Sex'], aggfunc=np.median)
+# Define function to return value of this pivot_table
+def fage(x):
+    return table[x['Pclass']][x['Sex']][x['New_Salutation']]
+# Replace missing values
+df['Age'].fillna(df[df['Age'].isnull()].apply(fage, axis=1), inplace=True)
+
+
+
+
+
 
 
 
