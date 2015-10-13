@@ -73,7 +73,7 @@ train_df = pd.merge(id_age_time_train,id_label_train,on = ['ID'],how = 'outer')
 
 print train_df.head(10)
 
-columns = ['Age','Pulse','Mean_BP','Respiratory_rate','LABEL']
+columns = ['Age','Pulse','Mean_BP','Respiratory_rate','Temperature','LABEL']
 
 modified_feature_train_matrix = pd.DataFrame(columns = columns)
 
@@ -136,6 +136,24 @@ def score_respiratory_rate(respiratory_rate):
 	elif respiratory_rate>49:
 		return 18
 
+def score_temperature(temperature):
+	temp_celcius = float((temperature-32)*5/9)
+	if temp_celcius <=32.9:
+		return 20
+	elif temp_celcius>=33 and temp_celcius <=33.4:
+	    return 16
+	elif temp_celcius>33.4 and temp_celcius<=33.9:
+	    return 13
+	elif temp_celcius>33.9 and temp_celcius<=34.9:
+	    return 8
+	elif temp_celcius>34.9 and temp_celcius<=35.9:
+	    return 2
+	elif temp_celcius>35.9 and temp_celcius<=36.9:
+	    return 0
+	else:
+	    return 4
+
+
 modified_matrix_index = 0
 
 
@@ -192,6 +210,15 @@ for patient in Patients_list:
 
 
  			#Temperature modified feature for Non-ICU of current patient
+			temperature_data_outside_icu = data_sub.V6
+			score_list_temperature = []
+			for measurement in temperature_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_temperature.append(score_temperature(float(measurement)))
+			if not score_list_temperature:
+				temperature_non_icu_score = 0
+			else:
+				temperature_non_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for Non-ICU of current patient
  			respiratory_rate_data_outside_icu = data_sub.V3
  			score_list = []
@@ -222,6 +249,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -260,6 +288,15 @@ for patient in Patients_list:
 
 
  			#Temperature modified feature for ICU of current patient
+			temperature_data_inside_icu = data_sub.V6
+			score_list_temperature = []
+			for measurement in temperature_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_temperature.append(score_temperature(float(measurement)))
+			if not score_list_temperature:
+				temperature_icu_score = temperature_non_icu_score
+			else:
+				temperature_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for ICU of current patient
  			respiratory_rate_data_inside_icu = data_sub.V3
  			score_list = []
@@ -288,6 +325,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',1)
 
  		else:   #selecting patients who survived
@@ -329,6 +367,15 @@ for patient in Patients_list:
  				mean_bp_non_icu_score = min(score_list)
 
  			#Temperature modified feature for Non-ICU of current patient
+			temperature_data_outside_icu = data_sub.V6
+			score_list_temperature = []
+			for measurement in temperature_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_temperature.append(score_temperature(float(measurement)))
+			if not score_list_temperature:
+				temperature_non_icu_score = 0
+			else:
+				temperature_non_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for Non-ICU of current patient
  			respiratory_rate_data_outside_icu = data_sub.V3
  			score_list = []
@@ -357,6 +404,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
  			#EXTRACTING MODIFIED FEATURES FROM ICU DATA OF THE CURRENT PATIENT
@@ -391,6 +439,15 @@ for patient in Patients_list:
  				mean_bp_icu_score = max(score_list)
 
  			#Temperature modified feature for ICU of current patient
+			temperature_data_inside_icu = data_sub.V6
+			score_list_temperature = []
+			for measurement in temperature_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_temperature.append(score_temperature(float(measurement)))
+			if not score_list_temperature:
+				temperature_icu_score = temperature_non_icu_score
+			else:
+				temperature_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for ICU of current patient
  			respiratory_rate_data_inside_icu = data_sub.V3
  			score_list = []
@@ -420,6 +477,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
