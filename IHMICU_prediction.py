@@ -73,7 +73,7 @@ train_df = pd.merge(id_age_time_train,id_label_train,on = ['ID'],how = 'outer')
 
 print train_df.head(10)
 
-columns = ['Age','Pulse','Mean_BP','LABEL']
+columns = ['Age','Pulse','Mean_BP','Respiratory_rate','LABEL']
 
 modified_feature_train_matrix = pd.DataFrame(columns = columns)
 
@@ -118,6 +118,23 @@ def score_mean_blood_pressure(systolic_bp,diastolic_bp):
 			elif mean_bp>=140:
 				return 10
 
+def score_respiratory_rate(respiratory_rate):
+	if respiratory_rate<=5:
+		return 17
+	elif respiratory_rate> 5 and respiratory_rate<=11:
+		return 8
+	elif respiratory_rate>11 and respiratory_rate<=13:
+		return 7
+	elif respiratory_rate>13 and respiratory_rate<=24:
+		return 0
+	elif respiratory_rate>24 and respiratory_rate<=34:
+		return 6
+	elif respiratory_rate>34 and respiratory_rate<=39:
+		return 9
+	elif respiratory_rate>39 and respiratory_rate<=49:
+		return 11
+	elif respiratory_rate>49:
+		return 18
 
 modified_matrix_index = 0
 
@@ -176,6 +193,16 @@ for patient in Patients_list:
 
  			#Temperature modified feature for Non-ICU of current patient
  			#Respiratory Rate modified feature for Non-ICU of current patient
+ 			respiratory_rate_data_outside_icu = data_sub.V3
+ 			score_list = []
+ 			for measurement in respiratory_rate_data_outside_icu:
+ 				if not pd.isnull(measurement):
+ 					score_list.append(score_respiratory_rate(int(measurement)))
+ 			if not score_list:
+ 				respiratory_rate_non_icu_score = 0
+ 			else:
+ 				respiratory_rate_non_icu_score = min(score_list)
+
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
  			#AaDO2 modified feature for Non-ICU of current patient
  			#Hematocrit modified feature for Non-ICU of current patient
@@ -194,6 +221,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -233,6 +261,16 @@ for patient in Patients_list:
 
  			#Temperature modified feature for ICU of current patient
  			#Respiratory Rate modified feature for ICU of current patient
+ 			respiratory_rate_data_inside_icu = data_sub.V3
+ 			score_list = []
+ 			for measurement in respiratory_rate_data_inside_icu:
+ 				if not pd.isnull(measurement):
+ 					score_list.append(score_pulse(int(measurement)))
+ 			if not score_list:
+ 				respiratory_rate_icu_score = respiratory_rate_non_icu_score
+ 			else:
+ 				respiratory_rate_icu_score = max(score_list)
+
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
  			#AaDO2 modified feature for ICU of current patient
  			#Hematocrit modified feature for ICU of current patient
@@ -249,6 +287,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',1)
 
  		else:   #selecting patients who survived
@@ -291,6 +330,16 @@ for patient in Patients_list:
 
  			#Temperature modified feature for Non-ICU of current patient
  			#Respiratory Rate modified feature for Non-ICU of current patient
+ 			respiratory_rate_data_outside_icu = data_sub.V3
+ 			score_list = []
+ 			for measurement in respiratory_rate_data_outside_icu:
+ 				if not pd.isnull(measurement):
+ 					score_list.append(score_respiratory_rate(int(measurement)))
+ 			if not score_list:
+ 				respiratory_rate_non_icu_score = 0
+ 			else:
+ 				respiratory_rate_non_icu_score = min(score_list)
+
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
  			#AaDO2 modified feature for Non-ICU of current patient
  			#Hematocrit modified feature for Non-ICU of current patient
@@ -307,6 +356,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
  			#EXTRACTING MODIFIED FEATURES FROM ICU DATA OF THE CURRENT PATIENT
@@ -342,6 +392,17 @@ for patient in Patients_list:
 
  			#Temperature modified feature for ICU of current patient
  			#Respiratory Rate modified feature for ICU of current patient
+ 			respiratory_rate_data_inside_icu = data_sub.V3
+ 			score_list = []
+ 			for measurement in respiratory_rate_data_inside_icu:
+ 				if not pd.isnull(measurement):
+ 					score_list.append(score_respiratory_rate(int(measurement)))
+ 			if not score_list:
+ 				respiratory_rate_icu_score = respiratory_rate_non_icu_score
+ 			else:
+ 				respiratory_rate_icu_score = max(score_list)
+
+
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
  			#AaDO2 modified feature for ICU of current patient
  			#Hematocrit modified feature for ICU of current patient
@@ -358,6 +419,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
