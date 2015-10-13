@@ -73,7 +73,7 @@ train_df = pd.merge(id_age_time_train,id_label_train,on = ['ID'],how = 'outer')
 
 print train_df.head(10)
 
-columns = ['Age','Pulse','LABEL']
+columns = ['Age','Pulse','Mean_BP','LABEL']
 
 modified_feature_train_matrix = pd.DataFrame(columns = columns)
 
@@ -95,13 +95,13 @@ def score_pulse(pulse):
 	else:
 		return 17
 
-def mean_blood_pressure_score(systolic_bp,diastolic_bp):
-	if not isnull(systolic_bp):
-		if not isnull(diastolic_bp):
+def score_mean_blood_pressure(systolic_bp,diastolic_bp):
+	if not pd.isnull(systolic_bp):
+		if not pd.isnull(diastolic_bp):
 			mean_bp = (systolic_bp + diastolic_bp)/2
 			if mean_bp <= 39:
 				return 23
-			elif mean_bp>=40 and mean_bp<60:
+			elif mean_bp>39 and mean_bp<60:
 				return 15
 			elif mean_bp>=60 and mean_bp<70:
 				return 7
@@ -158,7 +158,20 @@ for patient in Patients_list:
  				pulse_non_icu_score = min(score_list)
 
  			#Mean BP modified feature for Non-ICU of current patient
- 			columns_of_interest = ['V1','V2']
+ 			pressure_data = data_sub[['V1','V2']]
+ 			score_list = []
+ 			for index,row in pressure_data.iterrows():
+ 				systolic_bp = float(row['V1'])
+ 				diastolic_bp = float(row['V2'])
+ 				if not pd.isnull(systolic_bp):
+ 					if not pd.isnull(diastolic_bp):
+ 						mean_bp = score_mean_blood_pressure(systolic_bp,diastolic_bp)
+ 						score_list.append(mean_bp)
+ 			if not score_list:
+ 				mean_bp_non_icu_score = 0
+ 			else:
+ 				mean_bp_non_icu_score = min(score_list)
+
 
 
  			#Temperature modified feature for Non-ICU of current patient
@@ -180,6 +193,7 @@ for patient in Patients_list:
  			# #Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_non_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -202,6 +216,21 @@ for patient in Patients_list:
  				pulse_icu_score = max(score_list)
 
  			#Mean BP modified feature for ICU of current patient
+ 			pressure_data = data_sub[['V1','V2']]
+ 			score_list = []
+ 			for index,row in pressure_data.iterrows():
+ 				systolic_bp = float(row['V1'])
+ 				diastolic_bp = float(row['V2'])
+ 				if not pd.isnull(systolic_bp):
+ 					if not pd.isnull(diastolic_bp):
+ 						mean_bp = score_mean_blood_pressure(systolic_bp,diastolic_bp)
+ 						score_list.append(mean_bp)
+ 			if not score_list:
+ 				mean_bp_icu_score = mean_bp_non_icu_score
+ 			else:
+ 				mean_bp_icu_score = max(score_list)
+
+
  			#Temperature modified feature for ICU of current patient
  			#Respiratory Rate modified feature for ICU of current patient
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
@@ -219,6 +248,7 @@ for patient in Patients_list:
  			#Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',1)
 
  		else:   #selecting patients who survived
@@ -245,6 +275,20 @@ for patient in Patients_list:
  				pulse_non_icu_score = min(score_list)
 
  			#Mean BP modified feature for Non-ICU of current patient
+ 			pressure_data = data_sub[['V1','V2']]
+ 			score_list = []
+ 			for index,row in pressure_data.iterrows():
+ 				systolic_bp = float(row['V1'])
+ 				diastolic_bp = float(row['V2'])
+ 				if not pd.isnull(systolic_bp):
+ 					if not pd.isnull(diastolic_bp):
+ 						mean_bp = score_mean_blood_pressure(systolic_bp,diastolic_bp)
+ 						score_list.append(mean_bp)
+ 			if not score_list:
+ 				mean_bp_non_icu_score = 0
+ 			else:
+ 				mean_bp_non_icu_score = min(score_list)
+
  			#Temperature modified feature for Non-ICU of current patient
  			#Respiratory Rate modified feature for Non-ICU of current patient
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
@@ -262,6 +306,7 @@ for patient in Patients_list:
  			#Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_non_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
  			#EXTRACTING MODIFIED FEATURES FROM ICU DATA OF THE CURRENT PATIENT
@@ -281,6 +326,20 @@ for patient in Patients_list:
  				pulse_icu_score = max(score_list)
 
  			#Mean BP modified feature for ICU of current patient
+ 			pressure_data = data_sub[['V1','V2']]
+ 			score_list = []
+ 			for index,row in pressure_data.iterrows():
+ 				systolic_bp = float(row['V1'])
+ 				diastolic_bp = float(row['V2'])
+ 				if not pd.isnull(systolic_bp):
+ 					if not pd.isnull(diastolic_bp):
+ 						mean_bp = score_mean_blood_pressure(systolic_bp,diastolic_bp)
+ 						score_list.append(mean_bp)
+ 			if not score_list:
+ 				mean_bp_icu_score = mean_bp_non_icu_score
+ 			else:
+ 				mean_bp_icu_score = max(score_list)
+
  			#Temperature modified feature for ICU of current patient
  			#Respiratory Rate modified feature for ICU of current patient
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
@@ -298,6 +357,7 @@ for patient in Patients_list:
  			#Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Pulse',pulse_icu_score)
+ 			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
