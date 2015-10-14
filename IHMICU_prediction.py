@@ -500,7 +500,7 @@ for patient in Patients_list:
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_non_icu_score)
-modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -702,7 +702,7 @@ modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',A
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_icu_score)
-modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',1)
 
  		else:   #selecting patients who survived
@@ -907,7 +907,7 @@ modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',A
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_non_icu_score)
-modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin',Albumin_output_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin',Albumin_output_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
  			#EXTRACTING MODIFIED FEATURES FROM ICU DATA OF THE CURRENT PATIENT
@@ -1105,42 +1105,114 @@ modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin',Albumin_
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_icu_score)
   			modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_icu_score)
-
-
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
 
 print modified_feature_train_matrix
 
-# #Reading the validation files
-# id_age_val = pd.read_csv(os.path.join(cwd,'id_age_val.csv'))
-# id_label_val = pd.read_csv(os.path.join(cwd,'.id_label_val.csv'))
-# id_time_labs_val = pd.read_csv(os.path.join(cwd,'id_time_labs_val.csv'))
-# id_time_vitals_val = pd.read_csv(os.path.join(cwd,'id_time_vitals_val.csv'))
 
-# #Merging the validation files
-# id_time_val = pd.merge(id_time_labs_val,id_time_vitals_val,on = ['ID','Time'],how = 'outer')
-# id_age_time_val = pd.merge(id_age_val,id_time_val,on =['ID'],how = 'outer')
-# val_df = pd.merge(id_age_time_val,id_label_val,on = ['ID'],how = 'outer')
+print "Modified features creation done on the training data"
+
+print "Reading the validation files"
+#Reading the validation files
+id_age_val = pd.read_csv(os.path.join(cwd,'id_age_val.csv'))
+id_time_labs_val = pd.read_csv(os.path.join(cwd,'id_time_labs_val.csv'))
+id_time_vitals_val = pd.read_csv(os.path.join(cwd,'id_time_vitals_val.csv'))
+
+print "Merging the validation files"
+#Merging the validation files
+id_time_val = pd.merge(id_time_labs_val,id_time_vitals_val,on = ['ID','TIME'],how = 'outer')
+val_df = pd.merge(id_age_val,id_time_val,on =['ID'],how = 'outer')
+
+
+print val_df.head(10)
+columns = ['ID','TIME','Age','Pulse']
+
+modified_feature_val_matrix = pd.DataFrame(columns = columns)
+
+modified_val_matrix_index = 0
+
+for index,row in val_df.iterrows():
+	if float(row['ICU']) == 1:
+		modified_val_matrix_index = modified_val_matrix_index + 1
+
+		#extracting and filling the patient id and timestamp information
+		patient_id = int(row['ID'])
+		timestamp = int(row['TIME'])
+		age = int(row['Age'])
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'ID',patient_id)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'TIME',timestamp)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Age',age)
+
+
+		#Pulse modified feature
+		pulse_current_value = float(row['V3'])
+		if pd.isnull(pulse_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				pulse_data_history = data_sub.V3
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in pulse_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_pulse(int(measurement)))
+					if not score_list:
+						pulse_score_value = 0
+					else:
+						pulse_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					pulse_data_history = data_sub.V3
+					score_list = []
+					for measurement in pulse_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_pulse(int(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						pulse_data_history = data_sub.V3
+						score_list = []
+						for measurement in pulse_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_pulse(int(measurement)))
+						if not score_list:
+							pulse_score_value = 0
+						else:
+							pulse_score_value = max(score_list)
+					else:
+						pulse_score_value = max(score_list)
+			else:
+				pulse_score_value = 0
+		else:
+			pulse_score_value = score_pulse(pulse_current_value)
+
+		#Mean BP modified feature
+		#Temperature modified feature
+		#Respiratory Rate modified feature
+		#Partial Pressure of Oxygen modified feature
+		#AaDO2 modified feature
+		#Hematocrit modified feature
+		#WBC count modified feature
+		#Serum Creatinine modified
+		#Urine Output modified feature
+		#Serun BUN modified feature
+		#Serum Na modified feature
+		#Serum Albumin modified feature
+		#Serum Bilirubin modified feature
+		#Serum Glucose modified feature
+
+
+
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Pulse',pulse_score_value)
+
+print modified_feature_val_matrix
+
+
+
+
 
     
-# #Reading the test data files
-# id_age_test = pd.read_csv(os.path.join(cwd,'id_age_test.csv'))
-# id_time_labs_test = pd.read_csv(os.path.join(cwd,'id_time_labs_test.csv'))
-# id_time_vitals_test = pd.read_csv(os.path.join(cwd,'id_time_vitals_test.csv'))
-
-
-#print id_age_train.head(10)
-#print id_label_test.head(10)
-#print id_time_labs_train.head(10)
-
-#joining tables
-
-#checking foreign key constraint 
-
-#checking for missing values
-
 
 #code block to create modified features for training data
 #http://www.datacarpentry.org/python-ecology/02-index-slice-subset
