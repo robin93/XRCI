@@ -73,7 +73,7 @@ train_df = pd.merge(id_age_time_train,id_label_train,on = ['ID'],how = 'outer')
 
 print train_df.head(10)
 
-columns = ['Age','Pulse','Mean_BP','Respiratory_rate','Temperature','LABEL']
+columns = ['Age','Pulse','Mean_BP','Respiratory_rate','Temperature','AaDO2','LABEL']
 
 modified_feature_train_matrix = pd.DataFrame(columns = columns)
 
@@ -153,6 +153,19 @@ def score_temperature(temperature):
 	else:
 	    return 4
 
+def score_AaDO2_partial_pressure(fio2,paCO2,paO2):
+	AaDO2 = ((7.13*float(fio2)) - ((float(paCO2))/0.8) - float(paO2))
+	if AaDO2 <100:
+		return 0
+	elif AaDO2>=100 and AaDO2<250:
+		return 7
+	elif AaDO2>=250 and AaDO2<350:
+		return 9
+	elif AaDO2 >=350 and AaDO2<500:
+		return 11
+	else:
+		return 14
+
 
 modified_matrix_index = 0
 
@@ -219,8 +232,9 @@ for patient in Patients_list:
 				temperature_non_icu_score = 0
 			else:
 				temperature_non_icu_score = min(score_list_temperature)
+ 			
  			#Respiratory Rate modified feature for Non-ICU of current patient
- 			respiratory_rate_data_outside_icu = data_sub.V3
+ 			respiratory_rate_data_outside_icu = data_sub.V4
  			score_list = []
  			for measurement in respiratory_rate_data_outside_icu:
  				if not pd.isnull(measurement):
@@ -232,6 +246,22 @@ for patient in Patients_list:
 
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
  			#AaDO2 modified feature for Non-ICU of current patient
+ 			AaDO2_data = data_sub[['L20','L2','L3']]
+ 			score_list = []
+ 			for index,row in AaDO2_data.iterrows():
+ 				fio2 = float(row['L20'])
+ 				paCO2 = float(row['L2'])
+ 				paO2 = float(row['L3'])
+ 				if not pd.isnull(fio2):
+ 					if not pd.isnull(paCO2):
+ 						if not pd.isnull(paO2):
+ 							AaDO2_score = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+ 							score_list.append(AaDO2_score)
+ 			if not score_list:
+ 				AaDO2_non_icu_score = 0
+ 			else:
+ 				AaDO2_non_icu_score = min(score_list)
+
  			#Hematocrit modified feature for Non-ICU of current patient
  			#WBC count modified feature for Non-ICU of current patient
  			#Serum Creatinine modified feature for Non-ICU of current patient
@@ -250,6 +280,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -298,7 +329,7 @@ for patient in Patients_list:
 			else:
 				temperature_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for ICU of current patient
- 			respiratory_rate_data_inside_icu = data_sub.V3
+ 			respiratory_rate_data_inside_icu = data_sub.V4
  			score_list = []
  			for measurement in respiratory_rate_data_inside_icu:
  				if not pd.isnull(measurement):
@@ -310,6 +341,22 @@ for patient in Patients_list:
 
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
  			#AaDO2 modified feature for ICU of current patient
+ 			AaDO2_data = data_sub[['L20','L2','L3']]
+ 			score_list = []
+ 			for index,row in AaDO2_data.iterrows():
+ 				fio2= float(row['L20'])
+ 				paCO2 = float(row['L2'])
+ 				paO2 = float(row['L3'])
+ 				if not pd.isnull(fio2):
+ 					if not pd.isnull(paCO2):
+ 						if not pd.isnull(paO2):
+ 							AaDO2_score = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+ 							score_list.append(AaDO2_score)
+ 			if not score_list:
+ 				AaDO2_icu_score = AaDO2_non_icu_score
+ 			else:
+ 				AaDO2_icu_score = max(score_list)
+
  			#Hematocrit modified feature for ICU of current patient
  			#WBC count modified feature for ICU of current patient
  			#Serum Creatinine modified feature for ICU of current patient
@@ -326,6 +373,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',1)
 
  		else:   #selecting patients who survived
@@ -377,7 +425,7 @@ for patient in Patients_list:
 			else:
 				temperature_non_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for Non-ICU of current patient
- 			respiratory_rate_data_outside_icu = data_sub.V3
+ 			respiratory_rate_data_outside_icu = data_sub.V4
  			score_list = []
  			for measurement in respiratory_rate_data_outside_icu:
  				if not pd.isnull(measurement):
@@ -389,6 +437,22 @@ for patient in Patients_list:
 
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
  			#AaDO2 modified feature for Non-ICU of current patient
+ 			AaDO2_data = data_sub[['L20','L2','L3']]
+ 			score_list = []
+ 			for index,row in AaDO2_data.iterrows():
+ 				fio2= float(row['L20'])
+ 				paCO2 = float(row['L2'])
+ 				paO2 = float(row['L3'])
+ 				if not pd.isnull(fio2):
+ 					if not pd.isnull(paCO2):
+ 						if not pd.isnull(paO2):
+ 							AaDO2_score = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+ 							score_list.append(AaDO2_score)
+ 			if not score_list:
+ 				AaDO2_icu_score = AaDO2_non_icu_score
+ 			else:
+ 				AaDO2_icu_score = min(score_list)
+
  			#Hematocrit modified feature for Non-ICU of current patient
  			#WBC count modified feature for Non-ICU of current patient
  			#Serum Creatinine modified feature for Non-ICU of current patient
@@ -405,6 +469,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
  			#EXTRACTING MODIFIED FEATURES FROM ICU DATA OF THE CURRENT PATIENT
@@ -449,7 +514,7 @@ for patient in Patients_list:
 			else:
 				temperature_icu_score = min(score_list_temperature)
  			#Respiratory Rate modified feature for ICU of current patient
- 			respiratory_rate_data_inside_icu = data_sub.V3
+ 			respiratory_rate_data_inside_icu = data_sub.V4
  			score_list = []
  			for measurement in respiratory_rate_data_inside_icu:
  				if not pd.isnull(measurement):
@@ -462,6 +527,22 @@ for patient in Patients_list:
 
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
  			#AaDO2 modified feature for ICU of current patient
+ 			AaDO2_data = data_sub[['L20','L2','L3']]
+ 			score_list = []
+ 			for index,row in AaDO2_data.iterrows():
+ 				fio2= float(row['L20'])
+ 				paCO2 = float(row['L2'])
+ 				paO2 = float(row['L3'])
+ 				if not pd.isnull(fio2):
+ 					if not pd.isnull(paCO2):
+ 						if not pd.isnull(paO2):
+ 							AaDO2_score = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+ 							score_list.append(AaDO2_score)
+ 			if not score_list:
+ 				AaDO2_icu_score = AaDO2_non_icu_score
+ 			else:
+ 				AaDO2_icu_score = max(score_list)
+
  			#Hematocrit modified feature for ICU of current patient
  			#WBC count modified feature for ICU of current patient
  			#Serum Creatinine modified feature for ICU of current patient
@@ -478,6 +559,7 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
