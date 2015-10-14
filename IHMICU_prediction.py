@@ -73,7 +73,7 @@ train_df = pd.merge(id_age_time_train,id_label_train,on = ['ID'],how = 'outer')
 
 print train_df.head(10)
 
-columns = ['Age','Pulse','Mean_BP','Respiratory_rate','Temperature','AaDO2','LABEL']
+columns = ['Age','Pulse','Mean_BP','Respiratory_rate','Temperature','PaO2','AaDO2','Hematocrit','Urine_output','Bilirubin','WBC','BUN','Sodium','Serum_glucose','Serum_creatinine','Albumin_output','LABEL']
 
 modified_feature_train_matrix = pd.DataFrame(columns = columns)
 
@@ -153,6 +153,16 @@ def score_temperature(temperature):
 	else:
 	    return 4
 
+def score_PaO2(PaO2):
+	if PaO2<=49:
+		return 15
+	elif PaO2>49 and PaO2<=69:
+		return 5
+	elif PaO2>69 and PaO2<=79:
+		return 2
+	elif PaO2>79:
+		return 0
+
 def score_AaDO2_partial_pressure(fio2,paCO2,paO2):
 	AaDO2 = ((7.13*float(fio2)) - ((float(paCO2))/0.8) - float(paO2))
 	if AaDO2 <100:
@@ -166,6 +176,107 @@ def score_AaDO2_partial_pressure(fio2,paCO2,paO2):
 	else:
 		return 14
 
+def score_Hematocrit(Hematocrit):
+	if Hematocrit <=40.9:
+		return 3
+	elif Hematocrit >40.9 and Hematocrit <=49:
+		return 0
+	elif Hematocrit >49:
+		return 3
+
+def score_Urine_output(Urine_output):
+	if Urine_output <=399:
+		return 15
+	elif Urine_output > 399 and Urine_output <=599:
+		return 8
+	elif Urine_output >599 and Urine_output <= 899:
+		return 7
+	elif Urine_output >899 and Urine_output <= 1499:
+		return 5
+	elif Urine_output >1499 and Urine_output <=1999:
+		return 4
+	elif Urine_output >1999 and Urine_output <4000:
+		return 0
+	else:
+		return 1
+
+def score_bilirubin(bilirubin):
+	if bilirubin<=1.9:
+		return 0
+	elif bilirubin>1.9 and bilirubin<=2.9:
+		return 5
+	elif bilirubin>2.9 and bilirubin<=4.9:
+		return 6
+	elif bilirubin>4.9 and bilirubin<=7.9:
+		return 8
+	else:
+		return 16
+
+def score_WBC(WBC):
+	if WBC<1:
+		return 19
+	elif WBC>=1 and WBC<3:
+		return 5
+	elif WBC>=3 and WBC<20:
+		return 0
+	elif WBC>=20 and WBC<25:
+		return 1
+	else:
+	 return 5
+
+def score_BUN(BUN):
+	if BUN<17:
+		return 0
+	elif BUN>=17 and BUN<20:
+		return 2
+	elif BUN>=20 and BUN<40:
+		return 7
+	elif BUN>=40 and BUN<80:
+		return 11
+	else:
+	 return 12
+
+def score_Sodium(Sodium):
+	if Sodium<120:
+		return 3
+	elif Sodium>=120 and Sodium<135:
+		return 2
+	elif Sodium>=135 and Sodium<155:
+		return 0
+	else:
+	 return 4
+
+def score_serum_glucose(glucose):
+	if glucose<=39:
+		return 8
+	elif glucose>39 and glucose<=59:
+		return 9
+	elif glucose>59 and glucose<=199:
+		return 0
+	elif glucose>199 and glucose<=349:
+		return 3
+	else:
+		return 5
+
+def score_serum_creatinine(serum_creatinine):
+	if serum_creatinine<=0.4:
+		return 3
+	elif serum_creatinine>0.4 and serum_creatinine<=1.4:
+		return 0
+	elif serum_creatinine>1.4 and serum_creatinine<=1.94:
+		return 4
+	else:
+		return 7
+
+def score_Albumin_output(Albumin):
+	if Albumin<2:
+		return 11
+	elif Albumin>=2 and Albumin<2.5:
+		return 6
+	elif Albumin>=2.5 and Albumin<4.5:
+		return 0
+	else:
+	 return 4  
 
 modified_matrix_index = 0
 
@@ -245,6 +356,17 @@ for patient in Patients_list:
  				respiratory_rate_non_icu_score = min(score_list)
 
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
+ 			PaO2_data_outside_icu = data_sub.L3
+			score_list = []
+			for measurement in PaO2_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_PaO2(int(measurement)))
+			if not score_list:
+				PaO2_non_icu_score = 0
+			else:
+				PaO2_non_icu_score = min(score_list)
+
+
  			#AaDO2 modified feature for Non-ICU of current patient
  			AaDO2_data = data_sub[['L20','L2','L3']]
  			score_list = []
@@ -263,15 +385,103 @@ for patient in Patients_list:
  				AaDO2_non_icu_score = min(score_list)
 
  			#Hematocrit modified feature for Non-ICU of current patient
+ 			Hematocrit_data_outside_icu = data_sub.L10
+			score_list_Hematocrit = []
+			for measurement in Hematocrit_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_Hematocrit.append(score_Hematocrit(float(measurement)))
+			if not score_list_Hematocrit:
+				Hematocrit_non_icu_score = 0
+			else:
+				Hematocrit_non_icu_score = min(score_list_Hematocrit)
+
  			#WBC count modified feature for Non-ICU of current patient
+ 			WBC_data_outside_icu = data_sub.L9
+			score_list = []
+			for measurement in WBC_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_WBC(int(measurement)))
+			if not score_list:
+				WBC_non_icu_score = 0
+			else:
+				WBC_non_icu_score = min(score_list)
+
  			#Serum Creatinine modified feature for Non-ICU of current patient
+ 			Serum_creatinine_data_outside_icu = data_sub.L8
+			score_list = []
+			for measurement in Serum_creatinine_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_creatinine(int(measurement)))
+			if not score_list:
+				Serum_creatinine_non_icu_score = 0
+			else:
+				Serum_creatinine_non_icu_score = min(score_list)
+
  			#Urine Output modified feature for Non-ICU of current patient
+ 			Urine_output_data_outside_icu = data_sub.L13
+			score_list_Urine_output = []
+			for measurement in Urine_output_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_Urine_output.append(score_Urine_output(float(measurement)))
+			if not score_list_Urine_output:
+				Urine_output_non_icu_score = 0
+			else:
+				Urine_output_non_icu_score = min(score_list_Urine_output)
  			#Serun BUN modified feature for Non-ICU of current patient
+ 			BUN_data_outside_icu = data_sub.L7
+			score_list = []
+			for measurement in BUN_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_BUN(int(measurement)))
+			if not score_list:
+				BUN_non_icu_score = 0
+			else:
+				BUN_non_icu_score = min(score_list)
+
  			#Serum Na modified feature for Non-ICU of current patient
- 			#Serum Albumin modified feature for Non-ICU of current patient
- 			#Serum Bilirubin modified feature for Non-ICU of current patient
- 			#Serum Glucose modified feature for Non-ICU of current patient
+ 			Sodium_data_outside_icu = data_sub.L4
+			score_list = []
+			for measurement in Sodium_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_Sodium(int(measurement)))
+			if not score_list:
+				Sodium_non_icu_score = 0
+			else:
+				Sodium_non_icu_score = min(score_list)
  			
+#Serum Albumin modified feature for Non-ICU of current patient
+			Albumin_output_data_outside_icu = data_sub.L21
+			score_list_Albumin_output = []
+			for measurement in Albumin_output_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_Albumin_output.append(score_Albumin_output(float(measurement)))
+			if not score_list_Albumin_output:
+				Albumin_output_non_icu_score = 0
+			else:
+				Albumin_output_non_icu_score = min(score_list_Albumin_output)
+
+ 			#Serum Bilirubin modified feature for Non-ICU of current patient
+ 			Bilirubin_data_outside_icu = data_sub.L12
+			score_list = []
+			for measurement in Bilirubin_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_bilirubin(int(measurement)))
+			if not score_list:
+				Bilirubin_non_icu_score = 0
+			else:
+				Bilirubin_non_icu_score = min(score_list)
+
+
+ 			#Serum Glucose modified feature for Non-ICU of current patient
+ 			Serum_glucose_data_outside_icu = data_sub.L19
+			score_list = []
+			for measurement in Serum_glucose_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_glucose(int(measurement)))
+			if not score_list:
+				Serum_glucose_non_icu_score = 0
+			else:
+				Serum_glucose_non_icu_score = min(score_list)
 
 
  			# #Appending the modified non-ICU features for this patient
@@ -280,7 +490,17 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'PaO2',PaO2_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Hematocrit',Hematocrit_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Urine_output',Urine_output_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Bilirubin',Bilirubin_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'WBC',WBC_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'BUN',BUN_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_non_icu_score)
+modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -340,6 +560,16 @@ for patient in Patients_list:
  				respiratory_rate_icu_score = max(score_list)
 
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
+ 			PaO2_data_inside_icu = data_sub.L3
+			score_list = []
+			for measurement in PaO2_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_PaO2(int(measurement)))
+			if not score_list:
+				PaO2_icu_score = PaO2_non_icu_score
+			else:
+				PaO2_icu_score = max(score_list)
+
  			#AaDO2 modified feature for ICU of current patient
  			AaDO2_data = data_sub[['L20','L2','L3']]
  			score_list = []
@@ -358,14 +588,103 @@ for patient in Patients_list:
  				AaDO2_icu_score = max(score_list)
 
  			#Hematocrit modified feature for ICU of current patient
+ 			Hematocrit_data_inside_icu = data_sub.L10
+			score_list_Hematocrit = []
+			for measurement in Hematocrit_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_Hematocrit.append(score_Hematocrit(float(measurement)))
+			if not score_list_Hematocrit:
+				Hematocrit_icu_score = Hematocrit_non_icu_score
+			else:
+				Hematocrit_icu_score = max(score_list_Hematocrit)
+
  			#WBC count modified feature for ICU of current patient
+ 			WBC_data_inside_icu = data_sub.L9
+			score_list = []
+			for measurement in WBC_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_WBC(int(measurement)))
+			if not score_list:
+				WBC_icu_score = WBC_non_icu_score
+			else:
+				WBC_icu_score = max(score_list)
+
  			#Serum Creatinine modified feature for ICU of current patient
+ 			Serum_creatinine_data_icu = data_sub.L8
+			score_list = []
+			for measurement in Serum_creatinine_data_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_creatinine(int(measurement)))
+			if not score_list:
+				Serum_creatinine_icu_score = Serum_creatinine_non_icu_score
+			else:
+				Serum_creatinine_icu_score = max(score_list)
+
  			#Urine Output modified feature for ICU of current patient
+ 			Urine_output_data_inside_icu = data_sub.L13
+			score_list_Urine_output = []
+			for measurement in Urine_output_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_Urine_output.append(score_Urine_output(float(measurement)))
+			if not score_list_Urine_output:
+				Urine_output_icu_score = Urine_output_non_icu_score
+			else:
+				Urine_output_icu_score = max(score_list_Urine_output)
+
  			#Serun BUN modified feature for ICU of current patient
+ 			BUN_data_inside_icu = data_sub.L7
+			score_list = []
+			for measurement in BUN_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_BUN(int(measurement)))
+			if not score_list:
+				BUN_icu_score = BUN_non_icu_score
+			else:
+				BUN_icu_score = max(score_list)
+
  			#Serum Na modified feature for ICU of current patient
+ 			Sodium_data_inside_icu = data_sub.L4
+			score_list = []
+			for measurement in Sodium_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_Sodium(int(measurement)))
+			if not score_list:
+				Sodium_icu_score = Sodium_non_icu_score
+			else:
+				Sodium_icu_score = max(score_list)
+
  			#Serum Albumin modified feature for ICU of current patient
+			Albumin_output_data_inside_icu = data_sub.L21
+			score_list_Albumin_output = []
+			for measurement in Albumin_output_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_Albumin_output.append(score_Albumin_output(float(measurement)))
+			if not score_list_Albumin_output:
+				Albumin_output_icu_score = Albumin_output_non_icu_score
+			else:
+				Albumin_output_icu_score = min(score_list_Albumin_output)
+
  			#Serum Bilirubin modified feature for ICU of current patient
+ 			Bilirubin_data_icu = data_sub.L12
+			score_list = []
+			for measurement in Bilirubin_data_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_bilirubin(int(measurement)))
+			if not score_list:
+				Bilirubin_icu_score = Bilirubin_non_icu_score
+			else:
+				Bilirubin_icu_score = max(score_list)
+
  			#Serum Glucose modified feature for ICU of current patient
+ 			Serum_glucose_data_icu = data_sub.L19
+			score_list = []
+			for measurement in Serum_glucose_data_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_glucose(int(measurement)))
+			if not score_list:
+				Serum_glucose_icu_score = Serum_glucose_non_icu_score
+			else:
+				Serum_glucose_icu_score = max(score_list)
 
  			#Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
@@ -373,7 +692,17 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'PaO2',PaO2_icu_score)		
 			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Hematocrit',Hematocrit_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Urine_output',Urine_output_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Bilirubin',Bilirubin_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'WBC',WBC_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'BUN',BUN_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_icu_score)
+modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',1)
 
  		else:   #selecting patients who survived
@@ -436,6 +765,16 @@ for patient in Patients_list:
  				respiratory_rate_non_icu_score = min(score_list)
 
  			#Partial Pressure of Oxygen modified feature for Non-ICU of current patient
+ 			PaO2_data_outside_icu = data_sub.L3
+			score_list = []
+			for measurement in PaO2_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_PaO2(int(measurement)))
+			if not score_list:
+				PaO2_non_icu_score = 0
+			else:
+				PaO2_non_icu_score = min(score_list)
+
  			#AaDO2 modified feature for Non-ICU of current patient
  			AaDO2_data = data_sub[['L20','L2','L3']]
  			score_list = []
@@ -454,14 +793,103 @@ for patient in Patients_list:
  				AaDO2_icu_score = min(score_list)
 
  			#Hematocrit modified feature for Non-ICU of current patient
+ 			Hematocrit_data_outside_icu = data_sub.L10
+			score_list_Hematocrit= []
+			for measurement in Hematocrit_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_Hematocrit.append(score_Hematocrit(float(measurement)))
+			if not score_list_Hematocrit:
+				Hematocrit_non_icu_score = 0
+			else:
+				Hematocrit_non_icu_score = min(score_list_Hematocrit)
+
  			#WBC count modified feature for Non-ICU of current patient
+ 			BC_data_outside_icu = data_sub.L9
+			score_list = []
+			for measurement in WBC_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_WBC(int(measurement)))
+			if not score_list:
+				WBC_non_icu_score = 0
+			else:
+				WBC_non_icu_score = min(score_list)
+
  			#Serum Creatinine modified feature for Non-ICU of current patient
+ 			Serum_creatinine_data_outside_icu = data_sub.L8
+			score_list = []
+			for measurement in Serum_creatinine_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_creatinine(int(measurement)))
+			if not score_list:
+				Serum_creatinine_non_icu_score = 0
+			else:
+				Serum_creatinine_non_icu_score = min(score_list)
+
  			#Urine Output modified feature for Non-ICU of current patient
+ 			Urine_output_data_outside_icu = data_sub.L13
+			score_list_Urine_output = []
+			for measurement in Urine_output_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_Urine_output.append(score_Urine_output(float(measurement)))
+			if not score_list_Urine_output:
+				Urine_output_non_icu_score = 0
+			else:
+				Urine_output_non_icu_score = min(score_list_Urine_output)
+
  			#Serun BUN modified feature for Non-ICU of current patient
+ 			BUN_data_outside_icu = data_sub.L7
+			score_list = []
+			for measurement in BUN_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_BUN(int(measurement)))
+			if not score_list:
+				BUN_non_icu_score = 0
+			else:
+				BUN_non_icu_score = min(score_list)
+
  			#Serum Na modified feature for Non-ICU of current patient
+ 			Sodium_data_outside_icu = data_sub.L4
+			score_list = []
+			for measurement in Sodium_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_Sodium(int(measurement)))
+			if not score_list:
+				Sodium_non_icu_score = 0
+			else:
+				Sodium_non_icu_score = min(score_list)
+
  			#Serum Albumin modified feature for Non-ICU of current patient
+			Albumin_output_data_outside_icu = data_sub.L21
+			score_list_Albumin_output = []
+			for measurement in Albumin_output_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list_Albumin_output.append(score_Albumin_output(float(measurement)))
+			if not score_list_Albumin_output:
+				Albumin_output_non_icu_score = 0
+			else:
+				Albumin_output_non_icu_score = min(score_list_Albumin_output)
+
  			#Serum Bilirubin modified feature for Non-ICU of current patient
+ 			Bilirubin_data_outside_icu = data_sub.L12
+			score_list = []
+			for measurement in Bilirubin_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_bilirubin(int(measurement)))
+			if not score_list:
+				Bilirubin_non_icu_score = 0
+			else:
+				Bilirubin_non_icu_score = min(score_list)
  			#Serum Glucose modified feature for Non-ICU of current patient
+ 			Serum_glucose_data_outside_icu = data_sub.L19
+			score_list = []
+			for measurement in Serum_glucose_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_glucose(int(measurement)))
+			if not score_list:
+				Serum_glucose_non_icu_score = 0
+			else:
+				Serum_glucose_non_icu_score = min(score_list)
+
 
  			#Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
@@ -469,7 +897,17 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'PaO2',PaO2_non_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Hematocrit',Hematocrit_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Urine_output',Urine_output_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Bilirubin',Bilirubin_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'WBC',WBC_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'BUN',BUN_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_non_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_non_icu_score)
+modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin',Albumin_output_non_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
  			#EXTRACTING MODIFIED FEATURES FROM ICU DATA OF THE CURRENT PATIENT
@@ -512,7 +950,7 @@ for patient in Patients_list:
 			if not score_list_temperature:
 				temperature_icu_score = temperature_non_icu_score
 			else:
-				temperature_icu_score = min(score_list_temperature)
+				temperature_icu_score = max(score_list_temperature)
  			#Respiratory Rate modified feature for ICU of current patient
  			respiratory_rate_data_inside_icu = data_sub.V4
  			score_list = []
@@ -526,6 +964,16 @@ for patient in Patients_list:
 
 
  			#Partial Pressure of Oxygen modified feature for ICU of current patient
+ 			PaO2_data_inside_icu = data_sub.L3
+			score_list = []
+			for measurement in PaO2_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_PaO2(int(measurement)))
+			if not score_list:
+				PaO2_icu_score = PaO2_non_icu_score
+			else:
+				PaO2_icu_score = max(score_list)
+
  			#AaDO2 modified feature for ICU of current patient
  			AaDO2_data = data_sub[['L20','L2','L3']]
  			score_list = []
@@ -544,14 +992,101 @@ for patient in Patients_list:
  				AaDO2_icu_score = max(score_list)
 
  			#Hematocrit modified feature for ICU of current patient
+ 			Hematocrit_data_inside_icu = data_sub.L10
+			score_list_Hematocrit = []
+			for measurement in Hematocrit_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_Hematocrit.append(score_temperature(float(measurement)))
+			if not score_list_Hematocrit:
+				Hematocrit_icu_score = Hematocrit_non_icu_score
+			else:
+				Hematocrit_icu_score = max(score_list_Hematocrit)
+
  			#WBC count modified feature for ICU of current patient
+ 			WBC_data_inside_icu = data_sub.L9
+			score_list = []
+			for measurement in WBC_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_WBC(int(measurement)))
+			if not score_list:
+				WBC_icu_score = WBC_non_icu_score
+			else:
+				WBC_icu_score = max(score_list)
+
  			#Serum Creatinine modified feature for ICU of current patient
+ 			Serum_creatinine_data_icu = data_sub.L8
+			score_list = []
+			for measurement in Serum_creatinine_data_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_creatinine(int(measurement)))
+			if not score_list:
+				Serum_creatinine_icu_score = Serum_creatinine_non_icu_score
+			else:
+				Serum_creatinine_icu_score = max(score_list)
+
  			#Urine Output modified feature for ICU of current patient
+ 			Urine_output_data_inside_icu = data_sub.L13
+			score_list_Urine_output = []
+			for measurement in Urine_output_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_Urine_output.append(score_Urine_output(float(measurement)))
+			if not score_list_Urine_output:
+				Urine_output_icu_score = Urine_output_non_icu_score
+			else:
+				Urine_output_icu_score = max(score_list_Urine_output)
  			#Serun BUN modified feature for ICU of current patient
+ 			BUN_data_inside_icu = data_sub.L7
+			score_list = []
+			for measurement in BUN_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_BUN(int(measurement)))
+			if not score_list:
+				BUN_icu_score = BUN_non_icu_score
+			else:
+				BUN_icu_score = max(score_list)
  			#Serum Na modified feature for ICU of current patient
+ 			Sodium_data_inside_icu = data_sub.L4
+			score_list = []
+			for measurement in Sodium_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_Sodium(int(measurement)))
+			if not score_list:
+				Sodium_icu_score = Sodium_non_icu_score
+			else:
+				Sodium_icu_score = max(score_list)
+
  			#Serum Albumin modified feature for ICU of current patient
+			Albumin_output_data_inside_icu = data_sub.L21
+			score_list_Albumin_output = []
+			for measurement in Albumin_output_data_inside_icu:
+				if not pd.isnull(measurement):
+					score_list_Albumin_output.append(score_Albumin_output(float(measurement)))
+			if not score_list_Albumin_output:
+				Albumin_output_icu_score = Albumin_output_non_icu_score
+			else:
+				Albumin_output_icu_score = min(score_list_Albumin_output)
+
  			#Serum Bilirubin modified feature for ICU of current patient
+ 			Bilirubin_data_outside_icu = data_sub.L12
+			score_list = []
+			for measurement in Bilirubin_data_outside_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_bilirubin(int(measurement)))
+			if not score_list:
+				Bilirubin_icu_score = Bilirubin_non_icu_score
+			else:
+				Bilirubin_icu_score = max(score_list)
+ 			
  			#Serum Glucose modified feature for ICU of current patient
+ 			Serum_glucose_data_icu = data_sub.L19
+			score_list = []
+			for measurement in Serum_glucose_data_icu:
+				if not pd.isnull(measurement):
+					score_list.append(score_serum_glucose(int(measurement)))
+			if not score_list:
+				Serum_glucose_icu_score = Serum_glucose_non_icu_score
+			else:
+				Serum_glucose_icu_score = max(score_list)
 
  			#Appending the modified non-ICU features for this patient
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Age',Patient_age)
@@ -559,7 +1094,19 @@ for patient in Patients_list:
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Mean_BP',mean_bp_icu_score)
  			modified_feature_train_matrix.set_value(modified_matrix_index,'Respiratory_rate',respiratory_rate_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'Temperature',temperature_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'PaO2',PaO2_icu_score)
 			modified_feature_train_matrix.set_value(modified_matrix_index,'AaDO2',AaDO2_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Hematocrit',Hematocrit_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Urine_output',Urine_output_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Bilirubin',Bilirubin_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'WBC',WBC_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'BUN',BUN_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Sodium',Sodium_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_glucose',Serum_glucose_icu_score)
+			modified_feature_train_matrix.set_value(modified_matrix_index,'Serum_creatinine',Serum_creatinine_icu_score)
+  			modified_feature_train_matrix.set_value(modified_matrix_index,'Albumin_output',Albumin_output_icu_score)
+
+
  			modified_feature_train_matrix.set_value(modified_matrix_index,'LABEL',0)
 
 
@@ -637,3 +1184,5 @@ print modified_feature_train_matrix
 
 # #Output_file = pd.read_csv(os.path.join(cwd,'output_prediction.csv'))
 # #check_file = pd.merge(Output_file,id,on = ['ID','Time'],how = 'outer')
+
+
