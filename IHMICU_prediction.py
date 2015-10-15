@@ -1128,7 +1128,7 @@ val_df = pd.merge(id_age_val,id_time_val,on =['ID'],how = 'outer')
 
 print val_df.head(10)
 
-columns = ['ID','TIME','Age','Pulse','Mean_BP','AaDO2']
+columns = ['ID','TIME','Age','Pulse','Mean_BP','Temperature','AaDO2']
 
 modified_feature_val_matrix = pd.DataFrame(columns = columns)
 
@@ -1147,8 +1147,6 @@ for index,row in val_df.iterrows():
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'TIME',timestamp)
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Age',age)
 
-		#fio2_current_value = float(row['L20'])
-		#print fio2_current_value
 
 		#Pulse modified feature
 		pulse_current_value = float(row['V3'])   #extract current value
@@ -1192,9 +1190,6 @@ for index,row in val_df.iterrows():
 			pulse_score_value = score_pulse(pulse_current_value)
 
 
-		# fio2_current_value = float(row['L20'])
-		# print fio2_current_value
-		
 		#Mean BP modified feature
 		systolic_current_value = float(row['V1'])
 		diastolic_current_value = float(row['V2'])
@@ -1251,14 +1246,130 @@ for index,row in val_df.iterrows():
 				mean_bp_score = 0
 		else:
 			mean_bp_score = score_mean_blood_pressure(systolic_current_value,diastolic_current_value)
-				
-		#fio2_current_value = float(row['L20'])
-		#print fio2_current_value
 
 		#Temperature modified feature
+		temperature_current_value = float(row['V6'])
+		if pd.isnull(temperature_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				temperature_data_history = data_sub.V6
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in temperature_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_temperature(float(measurement)))
+					if not score_list:
+						temperature_score_value = 0
+					else:
+						temperature_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					temperature_data_history = data_sub.V6
+					score_list = []
+					for measurement in temperature_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_temperature(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						temperature_data_history = data_sub.V6
+						score_list = []
+						for measurement in temperature_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_temperature(float(measurement)))
+						if not score_list:
+							temperature_score_value = 0
+						else:
+							temperature_score_value = max(score_list)
+					else:
+						temperature_score_value = max(score_list)
+			else:
+				temperature_score_value = 0
+		else:
+			temperature_score_value = score_temperature(temperature_current_value)
 
 		#Respiratory Rate modified feature
+		respiratory_rate_current_value = float(row['V4'])
+		if pd.isnull(respiratory_rate_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				respiratory_rate_data_history = data_sub.V4
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in respiratory_rate_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_respiratory_rate(int(measurement)))
+					if not score_list:
+						respiratory_rate_score_value = 0
+					else:
+						respiratory_rate_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					respiratory_rate_data_history = data_sub.V4
+					score_list = []
+					for measurement in respiratory_rate_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_respiratory_rate(int(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						respiratory_rate_data_history = data_sub.V4
+						score_list = []
+						for measurement in respiratory_rate_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_respiratory_rate(int(measurement)))
+						if not score_list:
+							respiratory_rate_score_value = 0
+						else:
+							respiratory_rate_score_value = max(score_list)
+					else:
+						respiratory_rate_score_value = max(score_list)
+			else:
+				respiratory_rate_score_value = 0
+		else:
+			respiratory_rate_score_value = score_respiratory_rate(respiratory_rate_current_value)
+
 		#Partial Pressure of Oxygen modified feature
+		PaO2_current_value = float(row['L3'])
+		if pd.isnull(PaO2_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				PaO2_data_history = data_sub.L3
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in PaO2_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_PaO2(float(measurement)))
+					if not score_list:
+						PaO2_score_value = 0
+					else:
+						PaO2_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					PaO2_data_history = data_sub.L3
+					score_list = []
+					for measurement in PaO2_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_PaO2(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						PaO2_data_history = data_sub.L3
+						score_list = []
+						for measurement in PaO2_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_PaO2(float(measurement)))
+						if not score_list:
+							PaO2_score_value = 0
+						else:
+							PaO2_score_value = max(score_list)
+					else:
+						PaO2_score_value = max(score_list)
+			else:
+				PaO2_score_value = 0
+		else:
+			PaO2_score_value = score_PaO2(PaO2_current_value)
+
 		#AaDO2 modified feature
 		fio2_current_value = float(row['L20'])
  		paCO2_current_value = float(row['L2'])
@@ -1321,29 +1432,393 @@ for index,row in val_df.iterrows():
 			AaDO2_score = score_AaDO2_partial_pressure(fio2_current_value,paCO2_current_value,paO2_current_value)
 		
 		#Hematocrit modified feature
+		Hematocrit_current_value = float(row['L10'])
+		if pd.isnull(Hematocrit_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				Hematocrit_data_history = data_sub.L10
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in Hematocrit_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Hematocrit(int(measurement)))
+					if not score_list:
+						Hematocrit_score_value = 0
+					else:
+						Hematocrit_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					Hematocrit_data_history = data_sub.L10
+					score_list = []
+					for measurement in Hematocrit_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Hematocrit(int(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						Hematocrit_data_history = data_sub.L10
+						score_list = []
+						for measurement in Hematocrit_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_Hematocrit(int(measurement)))
+						if not score_list:
+							Hematocrit_score_value = 0
+						else:
+							Hematocrit_score_value = max(score_list)
+					else:
+						Hematocrit_score_value = max(score_list)
+			else:
+				Hematocrit_score_value = 0
+		else:
+			Hematocrit_score_value = score_Hematocrit(Hematocrit_current_value)
+
 		#WBC count modified feature
+		WBC_current_value = float(row['L9'])
+		if pd.isnull(WBC_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				WBC_data_history = data_sub.L9
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in WBC_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_WBC(int(measurement)))
+					if not score_list:
+						WBC_score_value = 0
+					else:
+						WBC_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					WBC_data_history = data_sub.L9
+					score_list = []
+					for measurement in WBC_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_WBC(int(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						WBC_data_history = data_sub.L9
+						score_list = []
+						for measurement in WBC_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_WBC(int(measurement)))
+						if not score_list:
+							WBC_score_value = 0
+						else:
+							WBC_score_value = max(score_list)
+					else:
+						WBC_score_value = max(score_list)
+			else:
+				WBC_score_value = 0
+		else:
+			WBC_score_value = score_WBC(WBC_current_value)
+
 		#Serum Creatinine modified
+		serum_creatinine_current_value = float(row['L8'])
+		if pd.isnull(serum_creatinine_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				serum_creatinine_data_history = data_sub.L8
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in serum_creatinine_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_serum_creatinine(int(measurement)))
+					if not score_list:
+						serum_creatinine_score_value = 0
+					else:
+						serum_creatinine_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					serum_creatinine_data_history = data_sub.L8
+					score_list = []
+					for measurement in serum_creatinine_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_serum_creatinine(int(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						serum_creatinine_data_history = data_sub.L8
+						score_list = []
+						for measurement in serum_creatinine_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_serum_creatinine(int(measurement)))
+						if not score_list:
+							serum_creatinine_score_value = 0
+						else:
+							serum_creatinine_score_value = max(score_list)
+					else:
+						serum_creatinine_score_value = max(score_list)
+			else:
+				serum_creatinine_score_value = 0
+		else:
+			serum_creatinine_score_value = score_serum_creatinine(serum_creatinine_current_value)
+
 		#Urine Output modified feature
+		Urine_output_current_value = float(row['L13'])
+		if pd.isnull(Urine_output_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				Urine_output_data_history = data_sub.L13
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in Urine_output_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Urine_output(float(measurement)))
+					if not score_list:
+						Urine_output_score_value = 0
+					else:
+						Urine_output_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					Urine_output_data_history = data_sub.L13
+					score_list = []
+					for measurement in Urine_output_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Urine_output(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						Urine_output_data_history = data_sub.L13
+						score_list = []
+						for measurement in Urine_output_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_Urine_output(float(measurement)))
+						if not score_list:
+							Urine_output_score_value = 0
+						else:
+							Urine_output_score_value = max(score_list)
+					else:
+						Urine_output_score_value = max(score_list)
+			else:
+				Urine_output_score_value = 0
+		else:
+			Urine_output_score_value = score_Urine_output(Urine_output_current_value)
+
 		#Serun BUN modified feature
+		BUN_current_value = float(row['L7'])
+		if pd.isnull(BUN_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				BUN_data_history = data_sub.L7
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in BUN_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_BUN(float(measurement)))
+					if not score_list:
+						BUN_score_value = 0
+					else:
+						BUN_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					BUN_data_history = data_sub.L7
+					score_list = []
+					for measurement in BUN_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_BUN(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						BUN_data_history = data_sub.L7
+						score_list = []
+						for measurement in BUN_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_BUN(float(measurement)))
+						if not score_list:
+							BUN_score_value = 0
+						else:
+							BUN_score_value = max(score_list)
+					else:
+						BUN_score_value = max(score_list)
+			else:
+				BUN_score_value = 0
+		else:
+			BUN_score_value = score_BUN(BUN_current_value)
 		#Serum Na modified feature
+		Sodium_current_value = float(row['L4'])
+		if pd.isnull(Sodium_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				Sodium_data_history = data_sub.L4
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in Sodium_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Sodium(float(measurement)))
+					if not score_list:
+						Sodium_score_value = 0
+					else:
+						Sodium_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					Sodium_data_history = data_sub.L4
+					score_list = []
+					for measurement in Sodium_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Sodium(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						Sodium_data_history = data_sub.L4
+						score_list = []
+						for measurement in Sodium_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_Sodium(float(measurement)))
+						if not score_list:
+							Sodium_score_value = 0
+						else:
+							Sodium_score_value = max(score_list)
+					else:
+						Sodium_score_value = max(score_list)
+			else:
+				Sodium_score_value = 0
+		else:
+			Sodium_score_value = score_Sodium(Sodium_current_value)
+
 		#Serum Albumin modified feature
+		Albumin_current_value = float(row['L21'])
+		if pd.isnull(Albumin_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				Albumin_data_history = data_sub.L21
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in Albumin_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Albumin_output(float(measurement)))
+					if not score_list:
+						Albumin_score_value = 0
+					else:
+						Albumin_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					Albumin_data_history = data_sub.L21
+					score_list = []
+					for measurement in Albumin_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_Albumin_output(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						Albumin_data_history = data_sub.L21
+						score_list = []
+						for measurement in Albumin_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_Albumin_output(float(measurement)))
+						if not score_list:
+							Albumin_score_value = 0
+						else:
+							Albumin_score_value = max(score_list)
+					else:
+						Albumin_score_value = max(score_list)
+			else:
+				Albumin_score_value = 0
+		else:
+			Albumin_score_value = score_Albumin_output(Albumin_current_value)
+
 		#Serum Bilirubin modified feature
+		Bilirubin_current_value = float(row['L12'])
+		if pd.isnull(Bilirubin_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				Bilirubin_data_history = data_sub.L12
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in Bilirubin_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_bilirubin(float(measurement)))
+					if not score_list:
+						Bilirubin_score_value = 0
+					else:
+						Bilirubin_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					Bilirubin_data_history = data_sub.L12
+					score_list = []
+					for measurement in Bilirubin_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_bilirubin(float(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						Bilirubin_data_history = data_sub.L12
+						score_list = []
+						for measurement in Bilirubin_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_bilirubin(float(measurement)))
+						if not score_list:
+							Bilirubin_score_value = 0
+						else:
+							Bilirubin_score_value = max(score_list)
+					else:
+						Bilirubin_score_value = max(score_list)
+			else:
+				Bilirubin_score_value = 0
+		else:
+			Bilirubin_score_value = score_bilirubin(Bilirubin_current_value)
+		
 		#Serum Glucose modified feature
+		Serum_glucose_current_value = float(row['L19'])
+		if pd.isnull(Serum_glucose_current_value):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				Serum_glucose_data_history = data_sub.L19
+				if timestamp < (3600*24):
+					score_list = []
+					for measurement in Serum_glucose_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_serum_glucose(int(measurement)))
+					if not score_list:
+						Serum_glucose_score_value = 0
+					else:
+						Serum_glucose_score_value = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					Serum_glucose_data_history = data_sub.L19
+					score_list = []
+					for measurement in Serum_glucose_data_history:
+						if not pd.isnull(measurement):
+							score_list.append(score_serum_glucose(int(measurement)))
+					if not score_list:
+						data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+						Serum_glucose_data_history = data_sub.L19
+						score_list = []
+						for measurement in Serum_glucose_data_history:
+							if not pd.isnull(measurement):
+								score_list.append(score_serum_glucose(int(measurement)))
+						if not score_list:
+							Serum_glucose_score_value = 0
+						else:
+							Serum_glucose_score_value = max(score_list)
+					else:
+						Serum_glucose_score_value = max(score_list)
+			else:
+				Serum_glucose_score_value = 0
+		else:
+			Serum_glucose_score_value = score_serum_glucose(Serum_glucose_current_value)
 
 
 
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Pulse',pulse_score_value)
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Mean_BP',mean_bp_score)
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'AaDO2',AaDO2_score)
-
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Temperature',temperature_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Respiratory_rate',respiratory_rate_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'PaO2',PaO2_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Hematocrit',Hematocrit_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Urine_output',Urine_output_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Bilirubin',Bilirubin_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'WBC',WBC_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'BUN',BUN_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Sodium',Sodium_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Serum_glucose',Serum_glucose_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Serum_creatinine',serum_creatinine_score_value)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Albumin',Albumin_score_value)
 
 print modified_feature_val_matrix
 
-
-
-
-
-    
 
 #code block to create modified features for training data
 #http://www.datacarpentry.org/python-ecology/02-index-slice-subset
