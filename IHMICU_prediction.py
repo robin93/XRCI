@@ -1127,56 +1127,12 @@ val_df = pd.merge(id_age_val,id_time_val,on =['ID'],how = 'outer')
 
 
 print val_df.head(10)
-columns = ['ID','TIME','Age','Pulse','Mean_BP']
+
+columns = ['ID','TIME','Age','Pulse','Mean_BP','AaDO2']
 
 modified_feature_val_matrix = pd.DataFrame(columns = columns)
 
 modified_val_matrix_index = 0
-
-"""
-# def mod_val_score(feature):
-# 	current_value = float(row[feature])
-# 	if pd.isnull(current_value):
-# 		if timestamp>0:
-# 			data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
-# 			data_history = data_sub[feature]
-# 			if timestamp < (3600*24):
-# 				score_list = []
-# 				for measurement in data_history:
-# 					if not pd.isnull(measurement):
-# 						score_list.append(score_pulse(int(measurement)))
-# 				if not score_list:
-# 					score_value =  0
-# 				else:
-# 					score_value = max(score_list)
-# 			else:
-# 				timestamp_less_24 = timestamp - (3600*24)
-# 				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
-# 				data_history = data_sub[feature]
-# 				score_list = []
-# 				for measurement in data_history:
-# 					if not pd.isnull(measurement):
-# 						score_list.append(score_pulse(int(measurement)))
-# 				if not score_list:
-# 					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
-# 					data_history = data_sub[feature]
-# 					score_list = []
-# 					for measurement in data_history:
-# 						if not pd.isnull(measurement):
-# 							score_list.append(score_pulse(int(measurement)))
-# 					if not score_list:
-# 						score_value = 0
-# 					else:
-# 						score_value = max(score_list)
-# 				else:
-# 					score_value = max(score_list)
-# 		else:
-# 			score_value = 0
-# 	else:
-# 		score_value = score_pulse(current_value)
-
-# 	return score_value
-"""
 
 
 for index,row in val_df.iterrows():
@@ -1191,6 +1147,8 @@ for index,row in val_df.iterrows():
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'TIME',timestamp)
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Age',age)
 
+		#fio2_current_value = float(row['L20'])
+		#print fio2_current_value
 
 		#Pulse modified feature
 		pulse_current_value = float(row['V3'])   #extract current value
@@ -1233,6 +1191,9 @@ for index,row in val_df.iterrows():
 		else:
 			pulse_score_value = score_pulse(pulse_current_value)
 
+
+		# fio2_current_value = float(row['L20'])
+		# print fio2_current_value
 		
 		#Mean BP modified feature
 		systolic_current_value = float(row['V1'])
@@ -1243,9 +1204,9 @@ for index,row in val_df.iterrows():
 				bp_data_history = data_sub[['V1','V2']]
 				if timestamp < (3600*24):
 					score_list = []
-					for index,row in bp_data_history.iterrows():
-						systolic_bp = float(row['V1'])
-						diastolic_bp = float(row['V2'])
+					for index,row_1 in bp_data_history.iterrows():
+						systolic_bp = float(row_1['V1'])
+						diastolic_bp = float(row_1['V2'])
 						if (pd.isnull(systolic_bp)) or (pd.isnull(diastolic_bp)):
 							score_list.append(0)
 						else:
@@ -1260,9 +1221,9 @@ for index,row in val_df.iterrows():
 					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
 					bp_data_history = data_sub[['V1','V2']]
 					score_list = []
-					for index,row in bp_data_history.iterrows():
-						systolic_bp = float(row['V1'])
-						diastolic_bp = float(row['V2'])
+					for index,row_2 in bp_data_history.iterrows():
+						systolic_bp = float(row_2['V1'])
+						diastolic_bp = float(row_2['V2'])
 						if (pd.isnull(systolic_bp)) or (pd.isnull(diastolic_bp)):
 							score_list.append(0)
 						else:
@@ -1273,8 +1234,8 @@ for index,row in val_df.iterrows():
 							bp_data_history = data_sub[['V1','V2']]
 							score_list = []
 							for index,row in bp_data_history.iterrows():
-								systolic_bp = float(row['V1'])
-								diastolic_bp = float(row['V2'])
+								systolic_bp = float(row_2['V1'])
+								diastolic_bp = float(row_2['V2'])
 								if (pd.isnull(systolic_bp)) or (pd.isnull(diastolic_bp)):
 									score_list.append(0)
 								else:
@@ -1291,40 +1252,74 @@ for index,row in val_df.iterrows():
 		else:
 			mean_bp_score = score_mean_blood_pressure(systolic_current_value,diastolic_current_value)
 				
-					
-						
-						
-						
-							# if not pd.isnull(systolic_bp):
-							# 	if not pd.isnull(diastolic_bp):
-							# 		mean_bp = score_mean_blood_pressure(systolic_bp,diastolic_bp)
- 						# score_list.append(mean_bp)
- 						# if not score_list:
- 						# 	data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
- 						# 	bp_data_history = data_sub[['V1','V2']]
- 						# 	score_list = []
- 						# 	for index,row in bp_data_history.iterrows():
- 						# 		systolic_bp = float(row['V1'])
-							# 	diastolic_bp = float(row['V2'])
-							# 	if not pd.isnull(systolic_bp):
-							# 		if not pd.isnull(diastolic_bp):
-							# 			mean_bp = score_mean_blood_pressure(systolic_bp,diastolic_bp)
-							# score_list.append(mean_bp)
-							# if not score_list:
-							# 	mean_bp_score = 0
-							# else:
-							# 	mean_bp_score = max(score_list)
- 						# else:
- 						# 	mean_bp_score = max(score_list)
-			
-
-
+		#fio2_current_value = float(row['L20'])
+		#print fio2_current_value
 
 		#Temperature modified feature
 
 		#Respiratory Rate modified feature
 		#Partial Pressure of Oxygen modified feature
 		#AaDO2 modified feature
+		fio2_current_value = float(row['L20'])
+ 		paCO2_current_value = float(row['L2'])
+ 		paO2_current_value = float(row['L3'])
+		if ((pd.isnull(fio2_current_value)) or (pd.isnull(paCO2_current_value)) or (pd.isnull(paO2_current_value))):
+			if timestamp>0:
+				data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+				AaDO2_data_history = data_sub[['L20','L2','L3']]
+				if timestamp < (3600*24):
+					score_list = []
+					for index,row_3 in AaDO2_data_history.iterrows():
+						fio2_current_value = float(row_3['L20'])
+ 						paCO2_current_value = float(row_3['L2'])
+ 						paO2_current_value = float(row_3['L3'])
+						if ((pd.isnull(fio2_current_value)) or (pd.isnull(paCO2_current_value)) or (pd.isnull(paO2_current_value))):
+							score_list.append(0)
+						else:
+							AaDO2_score_value = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+							score_list.append(AaDO2_score_value)
+						if not score_list:
+							AaDO2_score = 0
+						else:
+							AaDO2_score = max(score_list)
+				else:
+					timestamp_less_24 = timestamp - (3600*24)
+					data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp) & (val_df.TIME > timestamp_less_24)]
+					AaDO2_data_history = data_sub[['L20','L2','L3']]
+					score_list = []
+					for index,row_4 in AaDO2_data_history.iterrows():
+						fio2_current_value = float(row_4['L20'])
+ 						paCO2_current_value = float(row_4['L2'])
+ 						paO2_current_value = float(row_4['L3'])
+						if ((pd.isnull(fio2_current_value)) or (pd.isnull(paCO2_current_value)) or (pd.isnull(paO2_current_value))):
+							score_list.append(0)
+						else:
+							AaDO2_score_value = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+							score_list.append(AaDO2_score_value)
+						if not score_list:
+							data_sub = val_df[(val_df.ID == patient_id) & (val_df.TIME < timestamp)]
+							AaDO2_data_history = data_sub[['L20','L2','L3']]
+							score_list = []
+							for index,row_5 in AaDO2_data_history.iterrows():
+								fio2_current_value = float(row_5['L20'])
+ 								paCO2_current_value = float(row_5['L2'])
+ 								paO2_current_value = float(row_5['L3'])
+								if ((pd.isnull(fio2_current_value)) or (pd.isnull(paCO2_current_value)) or (pd.isnull(paO2_current_value))):
+									score_list.append(0)
+								else:
+									AaDO2_score_value = score_AaDO2_partial_pressure(fio2,paCO2,paO2)
+									score_list.append(AaDO2_score_value)
+							if not score_list:
+								AaDO2_score = 0
+							else:
+								AaDO2_score = max(score_list)
+						else:
+							AaDO2_score = max(score_list)
+			else:
+				AaDO2_score = 0
+		else:
+			AaDO2_score = score_AaDO2_partial_pressure(fio2_current_value,paCO2_current_value,paO2_current_value)
+		
 		#Hematocrit modified feature
 		#WBC count modified feature
 		#Serum Creatinine modified
@@ -1339,6 +1334,8 @@ for index,row in val_df.iterrows():
 
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Pulse',pulse_score_value)
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Mean_BP',mean_bp_score)
+		modified_feature_val_matrix.set_value(modified_val_matrix_index,'AaDO2',AaDO2_score)
+
 
 print modified_feature_val_matrix
 
