@@ -73,6 +73,8 @@ train_df = pd.merge(id_age_time_train,id_label_train,on = ['ID'],how = 'outer')
 
 print train_df.head(10)
 
+print train_df.ID
+
 columns = ['Age','Pulse','Mean_BP','Respiratory_rate','Temperature','PaO2','AaDO2','Hematocrit','Urine_output','Bilirubin','WBC','BUN','Sodium','Serum_glucose','Serum_creatinine','Albumin_output','LABEL']
 
 modified_feature_train_matrix = pd.DataFrame(columns = columns)
@@ -1128,11 +1130,13 @@ val_df = pd.merge(id_age_val,id_time_val,on =['ID'],how = 'outer')
 
 print val_df.head(10)
 
-columns = ['ID','TIME','Age','Pulse','Mean_BP','Temperature','AaDO2']
+columns_1 = ['Age','Pulse','Mean_BP','Temperature','AaDO2','Respiratory_rate','PaO2','Hematocrit','Urine_output','Bilirubin','WBC','BUN','Sodium','Serum_glucose','Serum_creatinine','Albumin']
+columns_2 = ['ID','TIME']
 
-modified_feature_val_matrix = pd.DataFrame(columns = columns)
+modified_feature_val_matrix = pd.DataFrame(columns = columns_1)
+patient_detail_matrix = pd.DataFrame(columns = columns_2)
 
-modified_val_matrix_index = 0
+modified_val_matrix_index = -1
 
 
 for index,row in val_df.iterrows():
@@ -1143,8 +1147,8 @@ for index,row in val_df.iterrows():
 		patient_id = int(row['ID'])
 		timestamp = int(row['TIME'])
 		age = int(row['Age'])
-		modified_feature_val_matrix.set_value(modified_val_matrix_index,'ID',patient_id)
-		modified_feature_val_matrix.set_value(modified_val_matrix_index,'TIME',timestamp)
+		patient_detail_matrix.set_value(modified_val_matrix_index,'ID',patient_id)
+		patient_detail_matrix.set_value(modified_val_matrix_index,'TIME',timestamp)
 		modified_feature_val_matrix.set_value(modified_val_matrix_index,'Age',age)
 
 
@@ -1819,48 +1823,26 @@ for index,row in val_df.iterrows():
 
 print modified_feature_val_matrix
 
+train_data = modified_feature_train_matrix
+test_data = modified_feature_val_matrix
 
-#code block to create modified features for training data
-#http://www.datacarpentry.org/python-ecology/02-index-slice-subset
-#Iterate over rows and print rows
-# for index, row in val_df.iterrows():
-#     for column in val_df.columns:
-#         print row[column],
-#     print
+features = modified_feature_train_matrix.columns[:16]
 
-#code block to create modified features for the test data
+print "Training....."
+forest = RandomForestClassifier(n_estimators = 5)
 
+forest = forest.fit(train_data[features],train_data["LABEL"])
 
+print "predicting..."
+output = forest.predict(test_data[features])
 
-# #remove name of the columns from the modified train before feeding it to the classifier
-# modified_train_df = modified_train_df.drop(['column_name1','Column_name2'],axis=1)
+s1 = pd.Series(output,name='Prediction')
 
-# #remove name of the columns from the modified validation before feeding it to the classifier
-# modified_val_df = modified_val_df.drop(['column_name1','Column_name2'],axis=1)
+final_output = pd.concat([patient_detail_matrix,s1],axis =1)
 
-# #the data now is ready to be fed to the classifier
-# #converting data back to the numpy array
-# train_data = modified_train_df.values
-# test_data = modified_val_df.values
+print final_output
 
-# print "Training....."
-# forest = RandomForestClassifier(n_estimators = 10)
-# forest = forest.fit( train_data[0::,1::], train_data[0::,0])
+final_output.to_csv('Output_Prediction.csv',sep = ',',index = False)
 
-# print "predicting..."
-# output = forest.predict(test_data).astype(int)
-
-# predictions_file = open("output_prediction.csv","wb")
-# open_file_object = csv.writer(prediction_file)
-# open_file_object.writerow(["Patient_id","Time_Stamp","Output_Prediction"])
-# open_file_object.writerows(zip(Patient_id,Time_Stamp,Output_Prediction))
-# predictions_file.close()
-# print "Done"
-
-# #calculating scores for the output
-# #print "calculating scores"
-
-# #Output_file = pd.read_csv(os.path.join(cwd,'output_prediction.csv'))
-# #check_file = pd.merge(Output_file,id,on = ['ID','Time'],how = 'outer')
-
+print "Done"
 
